@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May 19 10:45:10 2022
+@author: ChrisZeThird
+"""
+
 import numpy as np
 import numpy.fft as npfft
 
