@@ -4,7 +4,7 @@ Created on Sun May 22 12:06:45 2022
 
 @author: ChrisZeThird
 """
-import NumericalApplications2 as na
+import NumericalApplications2 as na # This file wasn't uploaded to this repo. You need to create that file or to simply call the class directly in this file 
 
 from scipy import optimize as opt
 import scipy.stats as stats
