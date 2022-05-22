@@ -24,7 +24,7 @@ class QuantumKickedRotor():
     def squareDot(self, x, arr):
         """Input : p -> array
                    arr -> array
-           Output : array, return the dot products of x² and a given array"""
+           Output : array, returns the dot products of x² and a given array"""
         return np.dot(x**2, arr)
     
     ## Fourier Transform 
@@ -82,7 +82,7 @@ class QuantumKickedRotor():
                    K -> float, kicks strength
                    t -> int, number of iterations of the simulation
                    n_beta -> int, number of beta values to average on
-           Output : array, return the average density of probability for n_beta values of the pseudo-impulsion"""
+           Output : array, returns the average density of probability for n_beta values of the pseudo-impulsion"""
            
         Beta = np.random.uniform(low=-0.5, high=0.5, size=(n_beta,))    
            
@@ -101,7 +101,7 @@ class QuantumKickedRotor():
                    K -> float, kicks strength
                    n -> int, number of iterations of the simulation
                    n_beta -> int, number of beta values to average on
-           Output : array, return the average energy for n_beta values of the pseudo-impulsion"""
+           Output : array, returns the average energy for n_beta values of the pseudo-impulsion"""
                     
         Beta = np.random.uniform(low=-0.5, high=0.5, size=(n_beta,))    
            
