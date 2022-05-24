@@ -112,7 +112,7 @@ class SpinKickedRotorRA():
         zeros = np.zeros(len(x))
         
         Uk = K*(1 - ((-1)**n_kick)*self.alpha)*np.array([[np.cos(x) + self.epsilon*np.sin(x) + np.pi/2, zeros],[zeros, np.cos(x) - self.epsilon*np.sin(x) - np.pi/2]])
-        Uk = np.exp(-(self.I*K/self.kb)*Uk)
+        Uk = np.exp(-(self.I/self.kb)*Uk)
         
         f1 = fft.fftshift(fft.fft(fft.ifftshift(Psi[0])))
         f2 = fft.fftshift(fft.fft(fft.ifftshift(Psi[1])))
