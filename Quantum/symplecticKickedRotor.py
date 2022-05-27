@@ -27,8 +27,7 @@ class SpinKickedRotor():
         self.epsilon = epsilon
         
     def Ukick(self, x, K):
-        """Input : p -> array, impulsions
-                   Psi -> 2d array, initial state
+        """Input : x -> array, impulsions
                    K -> float, kick's strength
            Output : array, returns the state after a Kick"""
         
@@ -56,7 +55,6 @@ class SpinKickedRotor():
         
     def Uprop(self, p,b=0):
         """Input : p -> array, impulsions
-                   Psi -> 2d array, initial state
                    b -> float, pseudo-impulsion
            Output : array, returns the state after a Propagation"""
            
@@ -88,14 +86,23 @@ class SpinKickedRotor():
         return Up    
     
     def loop(self, x, p, Psi, K, b, n):
-    
+        """Input : x -> array, positions 
+                   p -> array, impulsions
+                   Psi -> 1d array, initial states
+                   K -> float, kicks strength
+                   b -> float, pseudo-impulsion
+           Output : array, returns a state after one single iteration """
+        
         res = Psi
         
-        for i in range(n):
-                
-            Uk_f = self.Ukick(x,res,K)
-            # norm = np.linalg.norm(Uk_f)
-            res = self.Uprop(p,Uk_f,b)
+        Uk = self.Ukick(x,K)
+        Up = self.Uprop(p,b)
+         
+        fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+        Uk_f = np.matmul(Uk, fk)
+        # print(Uk_f.shape)
+        fp = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f)))
+        res = np.matmul(Up, fp)
              
         # norm = np.linalg.norm(res)    
         return res
@@ -118,7 +125,7 @@ class SpinKickedRotor():
         tick = time.time()
         Uk = self.Ukick(x,K)
         tock = time.time()
-        print('Uk', tock-tick)
+        # print('Uk', tock-tick)
         
         for i in range(n_avg):
             tick_i = time.time()
