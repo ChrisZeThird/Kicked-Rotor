@@ -6,51 +6,86 @@ Created on Fri May 20 19:04:49 2022
 """
 """
 Two classes are defined here based on two different Hamiltoniens. The goal was to showcase an anti-CBS curve. The reason why a second Hamiltonien was defined
-is because the first one wouldn't let me see the anti-CBS. 
+is because the first one wouldn't let me see the anti-CBS. But the reason was the missunderstanding of the operation. The function np.exp of numpy doesn't compute
+the exponential of a matrix but the exponential of each elements of the array. For that reason, I had to redefine the funcion, using the scipy module function expm
+which calculates the exponential of the matrix. The first model was then successful
 """
 
 import numpy as np
+from scipy.linalg import expm
 import numpy.fft as fft
 import matplotlib.pyplot as plt
 
+import time
+
 class SpinKickedRotor():
     
-    def __init__(self,kb = 2.89):   
+    def __init__(self, mu, epsilon, kb = 2.89):   
         self.I  = complex(0,1)
         self.kb = kb
+        self.mu = mu
+        self.epsilon = epsilon
         
-    def Ukick(self, x, Psi, K):
+    def Ukick(self, x, K):
         """Input : p -> array, impulsions
                    Psi -> 2d array, initial state
                    K -> float, kick's strength
            Output : array, returns the state after a Kick"""
         
-        Uk = np.array([[np.cos(x) + np.sin(x),np.sin(2*x)],[np.sin(2*x),np.cos(x) - np.sin(x)]])
-        Uk = np.exp(-(self.I*K/self.kb)*Uk)
+        L = len(x)
         
-        f1 = fft.fftshift(fft.fft(fft.ifftshift(Psi[0])))
-        f2 = fft.fftshift(fft.fft(fft.ifftshift(Psi[1])))
+        x_diag = np.diag(x)
         
-        res_kick = np.array([Uk[0,0]*f1 + Uk[0,1]*f2, Uk[1,0]*f1 + Uk[1,1]*f2])
+        # fk = fft.fftshift(fft.fft(fft.ifftshift(Psi)))
         
-        return res_kick
+        Uk = np.zeros((2*L,2*L))
         
-    def Uprop(self, x, Psi, b=0):
+        U1 = np.cos(x_diag) + self.epsilon * np.sin(x_diag)
+        U2 = 1/2 * self.mu * np.sin(2*x_diag)
+        U3 = 1/2 * self.mu *np.sin(2*x_diag)
+        U4 = np.cos(x_diag) - self.epsilon * np.sin(x_diag)
+        
+        Uk[:L,:L]       = U1
+        Uk[:L,L:2*L]    = U2
+        Uk[L:2*L,:L]    = U3
+        Uk[L:2*L,L:2*L] = U4
+        
+        Uk = expm(-(self.I*K/self.kb)*Uk)
+                
+        return Uk
+        
+    def Uprop(self, p,b=0):
         """Input : p -> array, impulsions
                    Psi -> 2d array, initial state
                    b -> float, pseudo-impulsion
            Output : array, returns the state after a Propagation"""
            
-        zeros = np.zeros(len(x))
+        L = len(p)
         
-        Up = np.array([[(x + self.kb*b)**2,zeros],[zeros,(x + self.kb*b)**2]],dtype=complex)
-        Up = np.exp(-(self.I*self.kb/2) * Up)
+        p_diag = np.diag(p)
+        zeros = np.zeros((L,L))
         
-        f1 = fft.ifftshift(fft.ifft(fft.fftshift(Psi[0])))
-        f2 = fft.ifftshift(fft.ifft(fft.fftshift(Psi[1])))
+        #fp = fft.ifftshift(fft.ifft(fft.fftshift(Psi)))
         
-        res_prop = np.array([Up[0,0]*f1 + Up[0,1]*f2, Up[1,0]*f1 + Up[1,1]*f2])
-        return res_prop    
+        Up = np.zeros((2*L,2*L))
+        
+        U1 = ((p_diag + b)**2)
+        U2 = zeros
+        U3 = zeros
+        U4 = ((p_diag + b)**2)
+        
+        Up[:L,:L]       = U1
+        Up[:L,L:2*L]    = U2
+        Up[L:2*L,:L]    = U3
+        Up[L:2*L,L:2*L] = U4
+
+        Up = expm(-(self.I*self.kb/2) * Up)
+        
+        # f1 = fft.ifftshift(fft.ifft(fft.fftshift(Psi[0])))
+        # f2 = fft.ifftshift(fft.ifft(fft.fftshift(Psi[1])))
+        
+        # res_prop = np.matmul(Up,fp)
+        return Up    
     
     def loop(self, x, p, Psi, K, b, n):
     
@@ -59,38 +94,55 @@ class SpinKickedRotor():
         for i in range(n):
                 
             Uk_f = self.Ukick(x,res,K)
-            
-            norm = np.linalg.norm(Uk_f)
-            res = self.Uprop(p,Uk_f/norm,b)
-            
-            norm = np.linalg.norm(res)
-            
-        return res/norm
+            # norm = np.linalg.norm(Uk_f)
+            res = self.Uprop(p,Uk_f,b)
+             
+        # norm = np.linalg.norm(res)    
+        return res
     
-    def avgPsi(self, x, p, Psi, K, t, n_beta):
+    def avgPsi(self, x, p, Psi, K, t, n_avg):
         """Input : x -> array, positions 
                    p -> array, impulsions
-                   f -> array, initial state
+                   Psi -> 1d array, initial states
                    K -> float, kicks strength
                    t -> int, number of iterations of the simulation
-                   n_beta -> int, number of beta values to average on
+                   n_avg -> int, number of beta (and omega) values to average on
            Output : array, returns the average density of probability for n_beta values of the pseudo-impulsion"""
         
-        N = len(x)
+        L = len(x)
+        psi_final = np.zeros(L)
         
-        psi_final = np.zeros(N)
+        Beta = np.random.uniform(low=-0.5, high=0.5, size=(n_avg,)) 
+
+        average = np.zeros((n_avg,L))
+        tick = time.time()
+        Uk = self.Ukick(x,K)
+        tock = time.time()
+        print('Uk', tock-tick)
         
-        Beta = np.random.uniform(low=-0.5, high=0.5, size=(n_beta,)) 
-        
-        for b in Beta:
+        for i in range(n_avg):
+            tick_i = time.time()
+            b = Beta[i]
+            Up = self.Uprop(p,b)
+            res = Psi    
             
-            temp = self.loop(x,p,Psi,K,b,t)
-            norm = np.linalg.norm(temp)
-            temp /= norm
+            for l in range(t):
+                fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+                Uk_f = np.matmul(Uk, fk)
+                # print(Uk_f.shape)
+                fp = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f)))
+                res = np.matmul(Up, fp)
+                # print(res.shape)
+            # print(res[:L])
+            # print(res[L:1*L])
+            average[i,:] = abs(res[:L])**2 + abs(res[L:2*L])**2
+            tock_i = time.time()
+            print(f'loop {i} took {tock_i - tick_i}s')
             
-            psi_final += abs(temp[0])**2 + abs(temp[1])**2
-        
-        return psi_final/len(Beta)
+        # print(average)
+        # print(average.shape)
+        psi_final = np.average(average, axis=0)    
+        return psi_final
         
     
 class SpinKickedRotorRA():
@@ -102,94 +154,136 @@ class SpinKickedRotorRA():
         self.alpha = alpha
         self.epsilon = epsilon
         
-    def Ukick(self, x, Psi, K, n_kick):
-        """Input : p -> array, impulsions
-                   Psi -> 2d array, initial state
+    def Ukick(self, x, K, n_kick):
+        """Input : x -> array, positions
+                   Psi -> 1d array, initial states
                    K -> float, kick's strength
                    n_kick -> int, number of kicks
            Output : array, returns the state after a Kick"""
         
-        zeros = np.zeros(len(x))
+        L = len(x)
+        res_kick = np.zeros(2*L, dtype=object)
+    
+        zeros = np.zeros((L,L))
+        x_diag = np.diag(x)
         
-        Uk = K*(1 - ((-1)**n_kick)*self.alpha)*np.array([[np.cos(x) + self.epsilon*np.sin(x) + np.pi/2, zeros],[zeros, np.cos(x) - self.epsilon*np.sin(x) - np.pi/2]])
-        Uk = np.exp(-(self.I/self.kb)*Uk)
+        Uk = np.zeros((2*L,2*L))
         
-        f1 = fft.fftshift(fft.fft(fft.ifftshift(Psi[0])))
-        f2 = fft.fftshift(fft.fft(fft.ifftshift(Psi[1])))
+        U1 = np.cos(x_diag) + self.epsilon * np.sin(x_diag)
+        U2 = zeros
+        U3 = zeros
+        U4 = np.cos(x_diag) - self.epsilon * np.sin(x_diag)
         
-        res_kick = np.array([Uk[0,0]*f1 + Uk[0,1]*f2, Uk[1,0]*f1 + Uk[1,1]*f2])
-        norm = np.linalg.norm(res_kick)
-        return res_kick/norm
+        # f1 = fft.fftshift(fft.fft(fft.ifftshift(Psi[0])))
+        # f2 = fft.fftshift(fft.fft(fft.ifftshift(Psi[1])))
         
-    def Uprop(self, p, Psi, b=0):
+        # fk = fft.fftshift(fft.fft(fft.ifftshift(Psi)))
+        
+        coeff = K*(1 - ((-1)**n_kick) * self.alpha)
+        
+        Uk[:L,:L]       = U1
+        Uk[:L,L:2*L]    = U2
+        Uk[L:2*L,:L]    = U3
+        Uk[L:2*L,L:2*L] = U4
+        
+        Uk = expm(-(self.I/self.kb)*coeff*Uk)
+        
+        # res_kick = np.dot(Uk,fk)
+        # norm = np.linalg.norm(res_kick)
+        return Uk
+        
+    def Uprop(self, p, b=0):
         """Input : p -> array, impulsions
                    Psi -> 2d array, initial state
                    b -> float, pseudo-impulsion
            Output : array, returns the state after a Propagation"""
         
-        ones = np.ones(len(p))
+        L = len(p)
         
-        Up = np.array([[(p + self.kb*b)**2,ones*self.omega],[ones*self.omega,(p + self.kb*b)**2]],dtype=complex)
-        Up = np.exp(-(self.I/2/self.kb) * Up)
+        identity = np.identity(L)
+        p_diag = np.diag(p)
         
-        f1 = fft.ifftshift(fft.ifft(fft.fftshift(Psi[0])))
-        f2 = fft.ifftshift(fft.ifft(fft.fftshift(Psi[1])))
+        Up = np.zeros((2*L,2*L))
         
-        res_prop = np.array([Up[0,0]*f1 + Up[0,1]*f2, Up[1,0]*f1 + Up[1,1]*f2])
-        norm = np.linalg.norm(res_prop)
-        return res_prop/norm
+        U1 = (p_diag + self.kb*b)**2 
+        U2 = identity*(self.omega)
+        U3 = identity*(self.omega)
+        U4 = (p_diag + self.kb*b)**2 
     
-    def loop(self, x, p, Psi, K, b, n):
+        Up[:L,:L]       = U1
+        Up[:L,L:2*L]    = U2
+        Up[L:2*L,:L]    = U3
+        Up[L:2*L,L:2*L] = U4
+        
+        Up = expm(-(self.I/2/self.kb) * Up)
+        
+        # fp = fft.ifftshift(fft.ifft(fft.fftshift(Psi)))
+        
+        # f1 = fft.ifftshift(fft.ifft(fft.fftshift(Psi[0])))
+        # f2 = fft.ifftshift(fft.ifft(fft.fftshift(Psi[1])))
+        
+        # res_prop = np.matmul(Up,fp)
+        # norm = np.linalg.norm(res_prop)
+        return Up
+    
+    def loop(self, x, p, Psi, K, b=0, n=100):
         """Input : x -> array, positions 
                    p -> array, impulsions
                    Psi -> 2d array, initial states
                    K -> float, kicks strength
                    b -> float, pseudo-impulsion
-                   n -> int, number of beta values to average on
+                   n -> int, number of loop
            Output : array, returns the new state of the system after one kick and one propagations for n iterations"""
         
         res = Psi
-        
+        Uk = self.Ukick(x,K,n)
         for i in range(n):
-                
-            Uk_f = self.Ukick(x,res,K,i+1)
             
-            norm = np.linalg.norm(Uk_f)
-            res = self.Uprop(p,Uk_f/norm,b)
+            fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+        
+            Uk_f = np.dot(Uk, res)
             
-            norm = np.linalg.norm(res)
-            res = res/norm
+            # norm = np.linalg.norm(Uk_f)
+            res = self.Uprop(p,Uk_f,b)
+            
+            # norm = np.linalg.norm(res)
+            # res = res/norm
             
         return res    
             
     
-    def avgPsi(self, x, p, Psi, K, t, n_beta):
+    def avgPsi(self, x, p, Psi, K, t, n_avg):
         """Input : x -> array, positions 
                    p -> array, impulsions
-                   Psi -> 2d array, initial states
+                   Psi -> 1d array, initial states
                    K -> float, kicks strength
                    t -> int, number of iterations of the simulation
-                   n_beta -> int, number of beta values to average on
+                   n_avg -> int, number of beta (and omega) values to average on
            Output : array, returns the average density of probability for n_beta values of the pseudo-impulsion"""
         
-        N = len(x)
+        L = len(x)
         psi_init  = Psi
-        psi_final = np.zeros(N)
+        psi_final = np.zeros(L)
         
-        Beta = np.random.uniform(low=-0.5, high=0.5, size=(n_beta,)) 
-        average = np.zeros((n_beta,N))
+        Beta = np.random.uniform(low=-0.5, high=0.5, size=(n_avg,)) 
+
+        average = np.zeros((n_avg,L))
+        tick = time.time()
+        Uk = self.Ukick(x,K,t)
+        tock = time.time()
+        print('Uk', tock-tick)
         
-        j = 0
-        
-        for b in Beta:
+        for i in range(n_avg):
+            b = Beta[i]
+            res = Psi     
+            Up = self.Uprop(p,b)
+            for time in range(t):
+                fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+                Uk_f = np.matmul(Uk, fk)
+                fp = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f)))
+                res = np.matmul(Uk_f,fp)
             
-            temp = self.loop(x,p,psi_init,K,b,t)
-            
-            average[j] = abs(temp[0])**2 + abs(temp[1])**2
-            j += 1
+            average[i] = abs(res[:L])**2 + abs(res[L:2*L])**2
             
         psi_final = np.average(average, axis=0)    
-        return psi_final
-   
-        
-        
+        return psi_final  
