@@ -87,15 +87,24 @@ class SpinKickedRotor():
         # res_prop = np.matmul(Up,fp)
         return Up    
     
-    def loop(self, x, p, Psi, K, b, n):
-    
+    def loop(self, x, p, Psi, K, b):
+        """Input : x -> array, positions 
+                   p -> array, impulsions
+                   Psi -> 1d array, initial states
+                   K -> float, kicks strength
+                   b -> float, pseudo-impulsion
+           Output : array, returns a state after one single iteration """
+        
         res = Psi
         
-        for i in range(n):
-                
-            Uk_f = self.Ukick(x,res,K)
-            # norm = np.linalg.norm(Uk_f)
-            res = self.Uprop(p,Uk_f,b)
+        Uk = self.Ukick(x,K)
+        Up = self.Uprop(p,b)
+         
+        fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+        Uk_f = np.matmul(Uk, fk)
+        # print(Uk_f.shape)
+        fp = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f)))
+        res = np.matmul(Up, fp)
              
         # norm = np.linalg.norm(res)    
         return res
@@ -226,30 +235,27 @@ class SpinKickedRotorRA():
         # norm = np.linalg.norm(res_prop)
         return Up
     
-    def loop(self, x, p, Psi, K, b=0, n=100):
+    def loop(self, x, p, Psi, K, b):
         """Input : x -> array, positions 
                    p -> array, impulsions
-                   Psi -> 2d array, initial states
+                   Psi -> 1d array, initial states
                    K -> float, kicks strength
                    b -> float, pseudo-impulsion
-                   n -> int, number of loop
-           Output : array, returns the new state of the system after one kick and one propagations for n iterations"""
+           Output : array, returns a state after one single iteration """
         
         res = Psi
-        Uk = self.Ukick(x,K,n)
-        for i in range(n):
-            
-            fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
         
-            Uk_f = np.dot(Uk, res)
-            
-            # norm = np.linalg.norm(Uk_f)
-            res = self.Uprop(p,Uk_f,b)
-            
-            # norm = np.linalg.norm(res)
-            # res = res/norm
-            
-        return res    
+        Uk = self.Ukick(x,K)
+        Up = self.Uprop(p,b)
+         
+        fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+        Uk_f = np.matmul(Uk, fk)
+        # print(Uk_f.shape)
+        fp = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f)))
+        res = np.matmul(Up, fp)
+             
+        # norm = np.linalg.norm(res)    
+        return res     
             
     
     def avgPsi(self, x, p, Psi, K, t, n_avg):
