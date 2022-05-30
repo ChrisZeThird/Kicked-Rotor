@@ -111,7 +111,7 @@ class SpinKickedRotor():
             fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
             fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
             res = np.matmul(Up, fp)
-            return self.loop(x, p, Psi, Uk, K, nkick, b)
+            return self.loop(x, p, res, Uk, K, nkick, b)
     
     def avgPsi(self, x, p, Psi, K, t, n_avg):
         """Input : x -> array, positions 
