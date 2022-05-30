@@ -94,7 +94,7 @@ class SpinKickedRotor():
             fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
             Uk_f = np.matmul(Uk, fk)
             
-            fp = np.zeros(2*L)
+            fp = np.zeros(2*L, dtype=complex)
             fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
             fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
             res = np.matmul(Up, fp)
@@ -107,11 +107,11 @@ class SpinKickedRotor():
             fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
             Uk_f = np.matmul(Uk, fk)
             
-            fp = np.zeros(2*L)
+            fp = np.zeros(2*L, dtype=complex)
             fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
             fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
             res = np.matmul(Up, fp)
-            return loop(x, p, res, K, b, nkick)
+            return self.loop(x, p, Psi, Uk, K, nkick, b)
     
     def avgPsi(self, x, p, Psi, K, t, n_avg):
         """Input : x -> array, positions 
@@ -221,7 +221,7 @@ class SpinKickedRotorRA():
             fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
             Uk_f = np.matmul(Uk, fk)
             
-            fp = np.zeros(2*L)
+            fp = np.zeros(2*L, dtype=complex)
             fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
             fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
             res = np.matmul(Up, fp)
@@ -234,12 +234,11 @@ class SpinKickedRotorRA():
             fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
             Uk_f = np.matmul(Uk, fk)
             
-            fp = np.zeros(2*L)
+            fp = np.zeros(2*L, dtype=complex)
             fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
             fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
             res = np.matmul(Up, fp)
-            return loop(x, p, res, K, b, nkick)
-            
+            return self.loop(x, p, Psi, Uk, K, nkick, b)            
     
     def avgPsi(self, x, p, Psi, K, t, n_avg):
         """Input : x -> array, positions 
