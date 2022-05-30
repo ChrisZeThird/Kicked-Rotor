@@ -7,8 +7,10 @@ Created on Fri May 20 19:04:49 2022
 """
 Two classes are defined here based on two different Hamiltoniens. The goal was to showcase an anti-CBS curve. The reason why a second Hamiltonien was defined
 is because the first one wouldn't let me see the anti-CBS. But the reason was the missunderstanding of the operation. The function np.exp of numpy doesn't compute
-the exponential of a matrix but the exponential of each elements of the array. For that reason, I had to redefine the funcion, using the scipy module function expm
-which calculates the exponential of the matrix. The first model was then successful
+the exponential of a matrix but the exponential of each elements of the array. For that reason, I had to redefine the function, using the scipy module function expm
+which calculates the exponential of the matrix. However, the time it required was far too long, therefore a rework of the Hamilton function of the Kick was necessary
+in order to reduce the duration. 
+The parameter optRKR also allows you to generate random array of impulsion to simulate the Random Kicked Rotor
 """
 
 import numpy as np
@@ -20,11 +22,12 @@ import time
 
 class SpinKickedRotor():
     
-    def __init__(self, mu, epsilon, kb = 2.89):   
+    def __init__(self, mu, epsilon, kb = 2.89, optRKR=False):   
         self.I  = complex(0,1)
         self.kb = kb
         self.mu = mu
         self.epsilon = epsilon
+        self.optRKR = optRKR
         
     def Ukick(self, x, K):
         """Input : p -> array, impulsions
@@ -52,28 +55,35 @@ class SpinKickedRotor():
         
     def Uprop(self, p,b=0):
         """Input : p -> array, impulsions
-                   Psi -> 2d array, initial state
                    b -> float, pseudo-impulsion
            Output : array, returns the state after a Propagation"""
            
         L = len(p)
         
-        diag =  np.diag(np.exp(-(self.I*self.kb/2) * (p + b*self.kb)**2))
+        # diag =  np.diag(np.exp(-(self.I*self.kb/2) * ((p + b)**2)))
         zeros = np.zeros((L,L), dtype=complex)
         
-        Up = np.zeros((2*L,2*L), dtype=complex)
+        if self.optRKR:
+            phiVect = 2*np.pi*np.random.rand(L)
+            diag =  np.diag(np.exp(-self.I*phiVect))
+        else:
+            diag =  np.diag(np.exp(-(self.I*self.kb/2) * ((p + b)**2)))    
         
+        Up = np.zeros((2*L,2*L), dtype=complex)
+                
         Up[:L,:L]       = diag
         Up[:L,L:2*L]    = zeros
         Up[L:2*L,:L]    = zeros
         Up[L:2*L,L:2*L] = diag
     
-        return Up     
+        return Up    
     
-   def loop(self, x, p, Psi, Uk, K, nkick, b):
+   def loop(self, x, p, Psi, Uk, Up, K, nkick, b):
         """Input : x -> array, positions 
                    p -> array, impulsions
                    Psi -> 1d array, initial states
+                   Uk -> 2d array, kick operator
+                   Up -> 2d array, propagation operator
                    K -> float, kicks strength
                    nkick -> int, number of kicks
                    b -> float, pseudo-impulsion
@@ -81,8 +91,7 @@ class SpinKickedRotor():
         
         L = len(x)
         res = Psi
-        Up = self.Uprop(p,b)
-         
+        
         ## RECURSIVE DEFINITION TO AVOID DOUBLE LOOP ON THE BETA AVERAGE CALCULATIONS
         
         if nkick == 0:
@@ -92,12 +101,12 @@ class SpinKickedRotor():
             fk = np.zeros(2*L, dtype=complex)
             fk[:L] = fft.fftshift(fft.fft(fft.ifftshift(res[:L])))
             fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
-            Uk_f = np.matmul(Uk, fk)
+            Uk_f = np.dot(Uk, fk)
             
             fp = np.zeros(2*L, dtype=complex)
             fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
             fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
-            res = np.matmul(Up, fp)
+            res = np.dot(Up, fp)
             return res
         
         else:
@@ -105,21 +114,22 @@ class SpinKickedRotor():
             fk = np.zeros(2*L, dtype=complex)
             fk[:L] = fft.fftshift(fft.fft(fft.ifftshift(res[:L])))
             fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
-            Uk_f = np.matmul(Uk, fk)
+            Uk_f = np.dot(Uk, fk)
             
             fp = np.zeros(2*L, dtype=complex)
             fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
             fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
-            res = np.matmul(Up, fp)
-            return self.loop(x, p, res, Uk, K, nkick, b)
+            res = np.dot(Up, fp)
+            # print(res)
+            return self.loop(x, p, res, Uk, Up, K, nkick, b)
     
-    def avgPsi(self, x, p, Psi, K, t, n_avg):
+    def avgPsi(self, x, p, Psi, K, nkick, navg):
         """Input : x -> array, positions 
                    p -> array, impulsions
                    Psi -> 1d array, initial states
                    K -> float, kicks strength
-                   t -> int, number of iterations of the simulation
-                   n_avg -> int, number of beta (and omega) values to average on
+                   nkick -> int, number of iterations of the simulation
+                   navg -> int, number of beta (and omega) values to average on
            Output : array, returns the average density of probability for n_beta values of the pseudo-impulsion"""
         
         L = len(x)
@@ -129,9 +139,11 @@ class SpinKickedRotor():
         
         for i in range(navg):
             b = np.random.uniform(low=-0.5, high=0.5)
-            psi_final = self.loop(x, p, Psi, Uk, K, nkick, b)
+            Up = self.Uprop(p,b)
+            psi_final = self.loop(x, p, Psi, Uk, Up, K, nkick, b)
             average[:,i] = abs(psi_final[:L])**2 + abs(psi_final[L:])**2
-            print(f'loop ended navg = {i}')
+            if i % 10 == 0:
+                print(f'loop {i}')
         
         return np.average(average, axis=1)
     
