@@ -16,10 +16,11 @@ m = 9
 N = 2**m
 #b = 0
 tkick =  10 #20
-K = 50
+K = 30
+optRKR = True
 
 p = np.linspace(start=-N, stop=N, endpoint=False, num=2*N)
-x = (2*np.pi)/(N) * p  
+x = (np.pi)/N * p
 
 f    = np.zeros(2*N)   # setting up initial distribution
 f[np.where(p==0)] = 1  # Dirac initial distribution in p = 0
@@ -30,17 +31,15 @@ psi_init_p[:,0] = f
 temp = np.zeros(4*N)
 temp[:2*N] = psi_init_p[:,0]
 temp[2*N:] = psi_init_p[:,1]
-psi_init_p = temp
 
 epsilon = 0.3
 mu = 0.8
-kb = 2.89
-nbeta = 100
+kb = 1
+nbeta = 500
 
-sim = kr.SpinKickedRotor(mu, epsilon, kb)
-psi_final = sim2.avgPsi(x, p, psi_init_p, K, tkick, nbeta)
+sim2 = kr.SpinKickedRotor(mu, epsilon, kb, optRKR)
+psi_final = sim2.avgPsi(x, p, temp, K, tkick, nbeta)
 
-## Plot only for the first Hamiltonien
-
+plt.figure()
 plt.plot(p,psi_final, label=f'μ={mu}, ϵ={epsilon}, kb={kb}, K={K}, nkick={tkick}, nbeta={nbeta}')
 
