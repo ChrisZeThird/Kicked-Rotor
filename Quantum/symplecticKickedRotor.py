@@ -79,6 +79,7 @@ class SpinKickedRotor():
                    b -> float, pseudo-impulsion
            Output : array, returns a state after one single iteration """
         
+        L = len(x)
         res = Psi
         Up = self.Uprop(p,b)
          
@@ -88,19 +89,29 @@ class SpinKickedRotor():
             return res
         
         elif nkick == 1:
-            fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+            fk = np.zeros(2*L, dtype=complex)
+            fk[:L] = fft.fftshift(fft.fft(fft.ifftshift(res[:L])))
+            fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
             Uk_f = np.matmul(Uk, fk)
-            fp = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f)))
+            
+            fp = np.zeros(2*L)
+            fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
+            fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
             res = np.matmul(Up, fp)
             return res
         
         else:
             nkick = nkick - 1
-            fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+            fk = np.zeros(2*L, dtype=complex)
+            fk[:L] = fft.fftshift(fft.fft(fft.ifftshift(res[:L])))
+            fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
             Uk_f = np.matmul(Uk, fk)
-            fp = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f)))
+            
+            fp = np.zeros(2*L)
+            fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
+            fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
             res = np.matmul(Up, fp)
-            return self.loop(x, p, res, Uk, K, nkick, b)
+            return loop(x, p, res, K, b, nkick)
     
     def avgPsi(self, x, p, Psi, K, t, n_avg):
         """Input : x -> array, positions 
@@ -195,6 +206,7 @@ class SpinKickedRotorRA():
                    b -> float, pseudo-impulsion
            Output : array, returns a state after one single iteration """
         
+        L = len(x)
         res = Psi
         Up = self.Uprop(p,b)
          
@@ -204,19 +216,29 @@ class SpinKickedRotorRA():
             return res
         
         elif nkick == 1:
-            fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+            fk = np.zeros(2*L, dtype=complex)
+            fk[:L] = fft.fftshift(fft.fft(fft.ifftshift(res[:L])))
+            fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
             Uk_f = np.matmul(Uk, fk)
-            fp = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f)))
+            
+            fp = np.zeros(2*L)
+            fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
+            fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
             res = np.matmul(Up, fp)
             return res
         
         else:
             nkick = nkick - 1
-            fk = fft.fftshift(fft.fft(fft.ifftshift(res)))
+            fk = np.zeros(2*L, dtype=complex)
+            fk[:L] = fft.fftshift(fft.fft(fft.ifftshift(res[:L])))
+            fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
             Uk_f = np.matmul(Uk, fk)
-            fp = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f)))
+            
+            fp = np.zeros(2*L)
+            fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
+            fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
             res = np.matmul(Up, fp)
-            return loop(x, p, res, K, b, nkick) 
+            return loop(x, p, res, K, b, nkick)
             
     
     def avgPsi(self, x, p, Psi, K, t, n_avg):
