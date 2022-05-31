@@ -149,14 +149,15 @@ class SpinKickedRotor():
     
 class SpinKickedRotorRA():
     
-    def __init__(self, omega, alpha, epsilon, kb = 2.89):   
+    def __init__(self, omega, alpha, epsilon, kb=2.89):   
         self.I  = complex(0,1)
         self.kb = kb
         self.omega = omega
         self.alpha = alpha
         self.epsilon = epsilon
+        # self.optRKR = optRKR
         
-    def Ukick(self, x, K, n_kick):
+    def Ukick(self, x, K, nkick):
         """Input : x -> array, positions
                    Psi -> 1d array, initial states
                    K -> float, kick's strength
@@ -164,24 +165,22 @@ class SpinKickedRotorRA():
            Output : array, returns the state after a Kick"""
         
         L = len(x)
-        res_kick = np.zeros(2*L, dtype=object)
-    
-        zeros = np.zeros((L,L))
-        Uk = np.zeros((2*L,2*L))
+
+        zeros = np.zeros((L,L), dtype=complex)
+        Uk = np.zeros((2*L,2*L), dtype=complex)
         
-        U1 = np.diag(np.cos(x) + self.epsilon * np.sin(x))
+        U1 = (np.cos(x) + self.epsilon * np.sin(x))
         U2 = zeros
         U3 = zeros
-        U4 = np.diag(np.cos(x) - self.epsilon * np.sin(x))
+        U4 = (np.cos(x) - self.epsilon * np.sin(x))
         
-        coeff = K*(1 - ((-1)**n_kick) * self.alpha)
+        coeff = K*(1 - ((-1)**nkick) * self.alpha)
         
-        Uk[:L,:L]       = U1
+        Uk[:L,:L]       = np.diag(np.exp(-(self.I/self.kb)*coeff*U1))
         Uk[:L,L:2*L]    = U2
         Uk[L:2*L,:L]    = U3
-        Uk[L:2*L,L:2*L] = U4
+        Uk[L:2*L,L:2*L] = np.diag(np.exp(-(self.I/self.kb)*coeff*U4))
         
-        Uk = np.exp(-(self.I/self.kb)*coeff*Uk)
         return Uk
         
     def Uprop(self, p, b=0):
@@ -192,14 +191,14 @@ class SpinKickedRotorRA():
         
         L = len(p)
         
-        identity = np.identity(L)
+        arrL = np.ones(L)
         
-        Up = np.zeros((2*L,2*L))
+        Up = np.zeros((2*L,2*L), dtype=complex)
         
         U1 = np.diag((p + self.kb*b)**2)
-        U2 = identity*(self.omega)
-        U3 = identity*(self.omega)
-        U4 = np.diag((p + self.kb*b)**2 )
+        U2 = np.diag(arrL*(self.omega))
+        U3 = np.diag(arrL*(self.omega))
+        U4 = np.diag((p + self.kb*b)**2)
     
         Up[:L,:L]       = U1
         Up[:L,L:2*L]    = U2
@@ -210,18 +209,18 @@ class SpinKickedRotorRA():
         
         return Up
     
-    def loop(self, x, p, Psi, K, b):
+    def loop(self, x, p, Psi, K, Uk, Up, nkick, b):
         """Input : x -> array, positions 
                    p -> array, impulsions
                    Psi -> 1d array, initial states
                    K -> float, kicks strength
+                   nkick -> int, number of kicks
                    b -> float, pseudo-impulsion
            Output : array, returns a state after one single iteration """
         
-        L = len(x)
         res = Psi
-        Up = self.Uprop(p,b)
-         
+        L = len(x)
+
         ## RECURSIVE DEFINITION TO AVOID DOUBLE LOOP ON THE BETA AVERAGE CALCULATIONS
         
         if nkick == 0:
@@ -231,12 +230,12 @@ class SpinKickedRotorRA():
             fk = np.zeros(2*L, dtype=complex)
             fk[:L] = fft.fftshift(fft.fft(fft.ifftshift(res[:L])))
             fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
-            Uk_f = np.matmul(Uk, fk)
+            Uk_f = np.dot(Uk, fk)
             
             fp = np.zeros(2*L, dtype=complex)
             fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
             fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
-            res = np.matmul(Up, fp)
+            res = np.dot(Up, fp)
             return res
         
         else:
@@ -244,32 +243,34 @@ class SpinKickedRotorRA():
             fk = np.zeros(2*L, dtype=complex)
             fk[:L] = fft.fftshift(fft.fft(fft.ifftshift(res[:L])))
             fk[L:] = fft.fftshift(fft.fft(fft.ifftshift(res[L:])))
-            Uk_f = np.matmul(Uk, fk)
+            Uk_f = np.dot(Uk, fk)
             
             fp = np.zeros(2*L, dtype=complex)
             fp[:L] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[:L])))
             fp[L:] = fft.ifftshift(fft.ifft(fft.fftshift(Uk_f[L:])))
-            res = np.matmul(Up, fp)
-            return self.loop(x, p, res, Uk, K, nkick, b)            
+            res = np.dot(Up, fp)
+            return self.loop(x, p, Psi, K, Uk, Up, nkick, b)
+
     
-    def avgPsi(self, x, p, Psi, K, t, n_avg):
+    def avgPsi(self, x, p, Psi, K, nkick, navg):
         """Input : x -> array, positions 
                    p -> array, impulsions
                    Psi -> 1d array, initial states
                    K -> float, kicks strength
-                   t -> int, number of iterations of the simulation
-                   n_avg -> int, number of beta (and omega) values to average on
+                   nkick -> int, number of iterations of the simulation
+                   navg -> int, number of beta (and omega) values to average on
            Output : array, returns the average density of probability for n_beta values of the pseudo-impulsion"""
         
         L = len(x)
-        
         average = np.zeros((L,navg))
-        Uk = self.Ukick(x,K,t)
+        Uk = self.Ukick(x,K,nkick)
         
         for i in range(navg):
             b = np.random.uniform(low=-0.5, high=0.5)
-            psi_final = self.loop(x, p, Psi, Uk, K, nkick, b)
+            Up = self.Uprop(p,b)
+            psi_final = self.loop(x, p, Psi, Uk, Up, K, nkick, b)
             average[:,i] = abs(psi_final[:L])**2 + abs(psi_final[L:])**2
             print(f'loop ended navg = {i}')
         
         return np.average(average, axis=1)
+
