@@ -1,123 +1,85 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu May 19 10:45:10 2022
+Created on Thu Jun  2 13:19:44 2022
+
 @author: ChrisZeThird
 """
-
 import numpy as np
-import numpy.fft as npfft
+from scipy.linalg import expm
+import numpy.fft as fft
+import matplotlib.pyplot as plt
 
-class QuantumKickedRotor():
-    
-    def __init__(self,):
-        self.kb = 2.89
-        
-    ## Utils 
-    
-    def squareModule(self, z):
-        """Input : z -> array of complex
-           Output : array, return the square module of a complex array of numbers"""
-        r = np.real(z)
-        i = np.imag(z)
-        return r**2 + i**2
-    
-    def squareDot(self, x, arr):
-        """Input : p -> array
-                   arr -> array
-           Output : array, returns the dot products of x² and a given array"""
-        return np.dot(x**2, arr)
-    
-    ## Fourier Transform 
-    
-    def FFT(self, f):
-        """Input : array, f
-           Output : array, computes the Fast Fourier Transform of an array"""
-        return npfft.fft(f)
-    
-    def iFFT(self, f):
-        """Input : f -> array
-           Output : array, computes the Invert Fast Fourier Transform of an array"""
-        return npfft.ifft(f)
-    
-    ## Operator
-    
-    def Ukick(self, x,f,K):
-        """Input : x -> array, positions 
-                   f -> array, initial state
-                   K -> float, kicks strength
-           Output : array, computes the Pulse Operator of the kicked rotor given f an initial state"""
-        Uk = np.diag(np.exp(-1j*K*np.cos(x)/self.kb))
-        return np.dot(Uk, npfft.fftshift(self.FFT(npfft.ifftshift(f))))
-        
-    def Uprop(self, x,f,b=0):
-        """Input : x -> array, positions 
-                   f -> array, initial state
-                   b -> float, pseudo-impulsion in [0,1]
-           Output : array, computes the Propagation Operator of the kicked rotor given f a state"""
-        Up = np.diag(np.exp(-1j*(x + self.kb*b)**2/2/self.kb))
-        return np.dot(Up, npfft.fftshift(self.iFFT(npfft.ifftshift(f))))
-    
-    ## Sequence 
-    
-    def loop(self, x,p,f,K,b=0):
-        """Input : x -> array, positions 
-                   p -> array, impulsions
-                   f -> array, initial state
-                   K -> float, kicks strength
-                   b -> float, pseudo-impulsion in [0,1]
-           Output : array, numerical simulation of the kicked rotor, based on a Fast Fourier Transform algorithm, returns the final
-                    distribution after one iteration"""
+import time
 
-        Uk_f = self.Ukick(x,f,K)
-        Up_f = self.Uprop(p,Uk_f,b)
+class KickedRotor():
+    
+    def __init__(self, kb = 2.89, optRKR=False):   
+        self.I  = complex(0,1)
+        self.kb = kb
+        self.optRKR = optRKR
+        
+    def Ukick(self, x, K, f):
+        """Input : x -> array, impulsions
+                   K -> float, kick's strength
+           Output : array, returns the state after a Kick"""
+        
+        k = K/self.kb
+
+        Uk = np.diag(np.exp(-self.I*k*np.cos(x)))
+        f_fft = fft.fftshift(fft.fft(fft.ifftshift(f)))
+        
+        return np.dot(Uk, f_fft)
+        
+    def Uprop(self, p, b, fk):
+        """Input : p -> array, impulsions
+                   b -> float, pseudo-impulsion
+           Output : array, returns the state after a Propagation"""
+           
+        L = len(p)
+        
+        if self.optRKR:
+            phiVect = 2*np.pi*np.random.rand(L)
+            Up =  np.diag(np.exp(-self.I*phiVect))
+        else:
+            Up =  np.diag(np.exp(-(self.I*self.kb/2) * ((p + b)**2)))  
             
-        return Up_f
+        fp = fft.ifftshift(fft.ifft(fft.fftshift(fk)))
+        return np.dot(Up, fp)
     
-    ## Average values of Energy and Probability density
-    
-    def avgPsi(self, x, p, f, K, t, n_beta):
+    def loop(self, x, p, Psi, K, nkick, b):
         """Input : x -> array, positions 
                    p -> array, impulsions
-                   f -> array, initial state
+                   Psi -> 1d array, initial states
                    K -> float, kicks strength
-                   t -> int, number of iterations of the simulation
-                   n_beta -> int, number of beta values to average on
+                   nkick -> int, number of kicks
+                   b -> float, pseudo-impulsion
+           Output : array, returns a state after one single iteration """
+        
+        L = len(x)
+        res = Psi
+        for j in range(nkick):
+            Uk = self.Ukick(x,K,res)
+            res = self.Uprop(p,b,Uk)            
+    
+        return res
+    
+    def avgPsi(self, x, p, Psi, K, nkick, navg):
+        """Input : x -> array, positions 
+                   p -> array, impulsions
+                   Psi -> 1d array, initial states
+                   K -> float, kicks strength
+                   nkick -> int, number of iterations of the simulation
+                   navg -> int, number of beta (and omega) values to average on
            Output : array, returns the average density of probability for n_beta values of the pseudo-impulsion"""
-           
-        Beta = np.random.uniform(low=-0.5, high=0.5, size=(n_beta,))    
-           
-        avgPsi = np.zeros(len(p)) 
-        for b in Beta:
-            res = f
-            res = self.loop(x,p,res,K,b)        
-            avgPsi += self.squareModule(res)
-           
-        return avgPsi/n_beta
-                   
-    def avgEnergy(self, x, p, f, K, n, n_beta):
-        """Input : x -> array, positions 
-                   p -> array, impulsions
-                   f -> array, initial state
-                   K -> float, kicks strength
-                   n -> int, number of iterations of the simulation
-                   n_beta -> int, number of beta values to average on
-           Output : array, returns the average energy for n_beta values of the pseudo-impulsion"""
-                    
-        Beta = np.random.uniform(low=-0.5, high=0.5, size=(n_beta,))    
-           
-        avgE = np.zeros(n)
-        res = np.zeros(n)
         
-        init = f
+        L = len(x)
+        average = np.zeros((L,navg))   
         
-        for b in Beta:
-            f = init
-            for i in range(n):
-                        
-                f = self.loop(x,p,f,K,b)        
-                res[i] = self.squareDot(p,self.squareModule(f))
-                        
-            avgE += res
-                
-        avgE /= n_beta 
-        return avgE*(self.kb**2/2)
+        for i in range(navg):
+            b = np.random.uniform(low=-0.5, high=0.5)
+            psi_final = self.loop(x, p, Psi, K, nkick,b)
+            average[:,i] = abs(psi_final)**2
+            if i % 50 == 0:
+                print(f'loop {i}')
+        
+        return np.average(average, axis=1)
