@@ -11,5 +11,5 @@ in the distribution to avoid problems (the large number of 0's distort the histo
 ## Two Spin-1/2 systems
 
 The first system is based on the work of Smielansky and Sharf, that is to say a coupling on the kick. The second one comes from the Thesis of Tony Prat, where he 
-decided to use the propagation operator for the coupling. Experimentaly, the second is much interesting since it doesn't require short times unlike the Smielansky's one.
-Consequently, it represents a great interest for the study of the symplectic kicked rotor.
+decided to use the propagation operator for the coupling. Experimentaly, the second one is much more interesting since it doesn't require short times unlike the Smielansky's one.
+Consequently, it represents a great interest for the experimental study of the symplectic kicked rotor.
