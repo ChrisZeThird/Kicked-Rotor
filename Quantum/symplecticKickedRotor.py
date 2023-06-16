@@ -5,11 +5,11 @@ Created on Fri May 20 19:04:49 2022
 @author: ChrisZeThird
 """
 """
-Two classes are defined here based on two different Hamiltoniens. The goal was to showcase an anti-CBS curve. The reason why a second Hamiltonien was defined
+Two classes are defined here based on two different Hamiltonians. The goal was to showcase an anti-CBS curve. The reason why a second Hamiltonian was defined
 is because the first one wouldn't let me see the anti-CBS. But the reason was the missunderstanding of the operation. The function np.exp of numpy doesn't compute
 the exponential of a matrix but the exponential of each elements of the array. For that reason, I had to redefine the function, using the scipy module function expm
 which calculates the exponential of the matrix. However, the time it required was far too long, therefore a rework of the Hamilton function of the Kick was necessary
-in order to reduce the duration. 
+in order to reduce the operation time. 
 The parameter optRKR also allows you to generate random array of impulsion to simulate the Random Kicked Rotor
 """
 
