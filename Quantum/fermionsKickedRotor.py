@@ -13,16 +13,19 @@ import matplotlib.pyplot as plt
     see what happens in that very specific case. The use of fermions simply allows us to set one particle for each
     energy/impulsion."""
 
-## Initial State 
 
-def fermi(N,Nf):
+# -- Initial State -- #
+
+def fermi(N, Nf):
     P = np.zeros((2*N, Nf), int)
-    width = np.arange(-(Nf-1)/2,(Nf-1)/2 + 1, dtype=int) + N
+    width = np.arange(-(Nf - 1)/2, (Nf - 1)/2 + 1, dtype=int) + N
+
     for i in range(Nf):
-        P[width[i],i] = 1
+        P[width[i], i] = 1
     return P  
 
-## Plot for Fermi distribution 
+
+# -- Plot for Fermi distribution -- #
 
 def fplot(farr):
     """" farr is the result of the function fermi above """
@@ -32,5 +35,5 @@ def fplot(farr):
     plt.xlabel('p')
     plt.ylabel('Ψf')
     plt.title(f'Fermi distribution for {Nf} fermions and size {N}')
-    plt.plot(np.linspace(-N/2,N/2-1,N),np.diag(np.dot(farr,np.transpose(np.conjugate(farr)))).real)
+    plt.plot(np.linspace(-N/2, N/2 - 1, N), np.diag(np.dot(farr, np.transpose(np.conjugate(farr)))).real)
     plt.show()

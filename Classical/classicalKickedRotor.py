@@ -7,13 +7,15 @@ Created on Thu May 19 09:45:03 2022
 import numpy as np
 import numpy.fft as npfft
 
-class ClassicalKickedRotor():
+
+class ClassicalKickedRotor:
     
     def __init__(self):
         pass
-        
-    def Chirikov(self, p, q, K, mod=True):
-        """Input : p -> array, contains the impulsions
+
+    @staticmethod
+    def Chirikov(p, q, K, mod=True):
+        """Input : p -> array, contains the impulsion
                    q -> array, contains the positions
                    K -> float, kicks strength
                    mod -> bool, if True, the value will then be %2π 
@@ -25,7 +27,7 @@ class ClassicalKickedRotor():
         else:
             pn = (p + K*np.sin(q)) 
             qn = (q + pn)
-            return qn,pn            
+            return qn, pn
     
     def iteration(self, q0, p0, K, N, n):
         """Input : q0 -> float, initial positions
@@ -42,26 +44,25 @@ class ClassicalKickedRotor():
              
             P, Q = np.meshgrid(p0, q0)
             Q = Q.reshape(len(p0)*len(q0))
-            P = P.reshape(len(p0)*len(q0)) # resize phase space to 2 pi by 2 pi
+            P = P.reshape(len(p0)*len(q0))  # resize phase space to 2 pi by 2 pi
             
-            colours = np.array([Q/max(Q), (P+Q)/max(P+Q), P/max(P)]).T #RGB value normalized
+            colours = np.array([Q/max(Q), (P+Q)/max(P+Q), P/max(P)]).T  # RGB value normalized
             print('colours', colours)
             Qn = [Q]
             Pn = [P]
             
             for i in range(n):
-                Q, P = self.Chirikov(P,Q,K)
+                Q, P = self.Chirikov(P, Q, K)
                 Qn.append(Q)
                 Pn.append(P)  
                 
-            print('hstackQ',np.hstack(Qn))    
-            print('vstackQ',np.vstack([colours]*(n+1))  
-            return np.hstack(Qn), np.hstack(Pn), np.vstack([colours]*(n+1)) # Stack arrays in sequence horizontally (column wise).
+            print('h-stackQ', np.hstack(Qn))
+            print('v-stackQ', np.vstack([colours]*(n+1)))
+            return np.hstack(Qn), np.hstack(Pn), np.vstack([colours]*(n+1))  # Stack arrays in sequence horizontally (column wise).
         
         else:
-            print('Initial conditions of positions and impulsions should have same size')
-            
-    
+            print('Initial conditions of positions and impulsion should have same size')
+
     def evolution(self, n, p0, q0, K):
         """Input : n -> int, width of the studied space
                     p0 -> float, initial impulsion
@@ -69,12 +70,12 @@ class ClassicalKickedRotor():
                     K -> float, kicks strength
             Output : tuple of arrays, returns the evolution of the system from an initial state using Chirikov standard map equations"""
         
-        p = np.linspace(0,2*np.pi,n)
-        q = np.linspace(0,2*np.pi,n)
-        p[0],q[0] = p0,q0
+        p = np.linspace(0, 2*np.pi, n)
+        q = np.linspace(0, 2*np.pi, n)
+        p[0], q[0] = p0, q0
         
         for i in range(n-1):
-            p[i+1], q[i+1] = self.Chirikov(p[i],q[i],K)
+            p[i+1], q[i+1] = self.Chirikov(p[i], q[i], K)
         return p,q
     
     def classicalEnergy(self, n, p0, q0, K):
@@ -89,7 +90,7 @@ class ClassicalKickedRotor():
         
         for i in range(len(p0)):
             for j in range(len(q0)):
-                p,_ = self.evolution(n, p0[i], q0[j], K) # only p is useful in this case
+                p, _ = self.evolution(n, p0[i], q0[j], K)  # only p is useful in this case
                 P2 += p**2
                 
         return P2/n   

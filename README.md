@@ -13,7 +13,18 @@ This internship focused on the modelisation of the Kicked Rotor, both in classic
 
 ***Disclaimer (06/2023):*** _This project was created before I knew how to use git, and before I had access to Pycharm. The structure
 of the code might not be very intelligible. Moreover, the code might not be legible all the time with non-explicit variable
-names. A short restructuring might be done in a close future._
+names. A short restructuring will be done over the time to make this project more accessible._
 
 # Files structure
 
+* `Classical` : Custom classes and methods to model the classical kicked rotor.
+  * `classicalKickedRotor.py` : computed Chirikov standard map, as well as the energy levels
+  * `classicalPlot.py` : utils methods to plot the probability distributions and phase diagram of the classical kicked rotor
+  * `Graphs` : example of graphs obtained
+* `Quantum` : Custom classes and methods to model the quantum kicked rotor.
+  * `fermionsKickedRotor.py` : short script to take into account Fermi distribution 
+  * `quantumKickedRotor.py` : class to model the quantum kicked rotor (no spin)
+  * `symplecticKickedRotor.py` : class to model the spin-orbit interaction in the quantum kicked rotor
+  * `Graphs` : series of graphs obtained for each of the three cases listed above. _The `Spin` folder also contained Gaussian
+fitting method_
+  * `LevelSpacing` : computes the energy level distribution for three classes of symmetry of the Hamiltonian
