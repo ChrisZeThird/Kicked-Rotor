@@ -27,4 +27,4 @@ names. A short restructuring will be done over the time to make this project mor
   * `symplecticKickedRotor.py` : class to model the spin-orbit interaction in the quantum kicked rotor
   * `Graphs` : series of graphs obtained for each of the three cases listed above. _The `Spin` folder also contained Gaussian
 fitting method_
-  * `LevelSpacing` : computes the energy level distribution for three classes of symmetry of the Hamiltonian
+  * `LevelSpacing` : `levelspacing.py` computes the energy level distribution for three classes of symmetry of the Hamiltonian

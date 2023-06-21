@@ -36,9 +36,10 @@ class ClassicalKickedRotor:
                    N -> int, width of the studied space
                    K -> float, kicks strength
                    n -> number of iterations of the Chirikov standard map
-           Output : tuple of arrays, Returns n iterations of the Chirikov stdmap with parameter K and resolution r
+           Output : tuple of arrays, Returns n iterations of the Chirikov standard map with parameter K and resolution r
            
-           This code is a slight rewriting of @t-makaro's version very useful to plot the phase graph. The ploting part isn't available in this file.
+           This code is a slight rewriting of @t-makaro's version very useful to plot the phase graph. The plotting part
+           isn't available in this file.
            """
         if len(p0) == len(q0):
              
@@ -76,7 +77,7 @@ class ClassicalKickedRotor:
         
         for i in range(n-1):
             p[i+1], q[i+1] = self.Chirikov(p[i], q[i], K)
-        return p,q
+        return p, q
     
     def classicalEnergy(self, n, p0, q0, K):
         """Input : n -> int, width of the studied space

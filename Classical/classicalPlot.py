@@ -7,9 +7,14 @@ from Classical.classicalKickedRotor import ClassicalKickedRotor
 CKR = ClassicalKickedRotor()
 
 
-def plot(K, N=200, r=.5):
+def plot(K, N=200):
     """
     This comes from @t-makaro program on GitHub, alongside another code part called 'iteration'
+    Input:
+        N -> int, width of the studied space
+        K -> float, kicks strength
+    Output:
+        None. Plot a curve.
     """
     Q, P, colours = CKR.iteration(K, N, N)
 
@@ -22,7 +27,14 @@ def plot(K, N=200, r=.5):
 def iteration_density(K, sample, nkick=300, N=100, r=1):
     """ The sample is a list of the Kick numbers the user wants to plot, the code below is a 
         very personal version, and you may want to change the value of the colours or add more possible colours.
-        It was initially designed for a sample length of 4."""
+        It was initially designed for a sample length of 4.
+    Input:
+        K -> int, width of the studied space
+        sample ->
+        nkick -> int, Number of kick
+        N -> int, width of the studied space
+        r ->
+    """
     
     p = np.linspace(-10, 10, N)
     x = np.zeros(N)

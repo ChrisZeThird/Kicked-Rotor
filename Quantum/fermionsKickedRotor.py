@@ -2,16 +2,16 @@
 """
 Created on Thu May 19 10:55:13 2022
 @author: ChrisZeThird
+
+As the kicked rotor was studied for only one particle distribution, I also worked on the case of multiple
+fermions distributions. Naturally, the functions from other file in this folder must be used if you want to
+see what happens in that very specific case. The use of fermions simply allows us to set one particle for each
+energy/impulsion.
 """
 
 import numpy as np
 import numpy.fft as npfft
 import matplotlib.pyplot as plt
-
-""" As the kicked rotor was studied for only one particle distribution, I also worked on the case of multiple
-    fermions distributions. Naturally, the functions from other file in this folder must be used if you want to
-    see what happens in that very specific case. The use of fermions simply allows us to set one particle for each
-    energy/impulsion."""
 
 
 # -- Initial State -- #
