@@ -18,11 +18,11 @@ tkick = 10
 p = np.linspace(start=-N, stop=N, endpoint=False, num=2*N)
 x = (2*np.pi)/(2*N) * p  
 
-f    = np.zeros(2*N) # setting up initial distribution
+f = np.zeros(2*N) # setting up initial distribution
 f[N] = 1             # Dirac initial distribution in p = 0
 
-psi_init_p = np.zeros((2,2*N))
-psi_init_p[0,:] = f
+psi_init_p = np.zeros((2, 2*N))
+psi_init_p[0, :] = f
 norm = np.linalg.norm(psi_init_p)
 psi_init_p = psi_init_p/norm
 
@@ -35,7 +35,8 @@ epsilon = 0.9
 kb = 2.89
 K = 55
 n_avg = 1000
-## Computes model
+
+# Computes model
 
 # sim        = kr.SpinKickedRotor(kb, mu, epsilon)
 # psi_final1 = sim.avgPsi(x, p, psi_init_p, K, tkick-1, n_beta)
@@ -54,15 +55,17 @@ xdata = p
 # ydata2 = psi_final2
 # ydata3 = psi_final3
 
-## Fitting function
 
-def fit_gaussien(q,A,c):
-    return A*np.exp(-q**(2)/c)
+# Fitting function
 
-popt,pcov = curve_fit(fit_gaussien,xdata,ydata)
-function   = fit_gaussien(xdata,*popt)
-function[np.where(p==0)]=function[1024]/2.
-err_rel = np.abs(ydata[1024]-function[1024])/ydata[1024]
+def fit_gaussien(q, A, c):
+    return A * np.exp(-q**2 / c)
+
+
+popt, pcov = curve_fit(fit_gaussien, xdata, ydata)
+function = fit_gaussien(xdata, *popt)
+function[np.where(p == 0)] = function[1024] / 2.
+err_rel = np.abs(ydata[1024] - function[1024]) / ydata[1024]
 
 # popt1,pcov1 = curve_fit(fit_gaussien,xdata,ydata1)
 # function1   = fit_gaussien(xdata,*popt1)
@@ -81,7 +84,7 @@ err_rel = np.abs(ydata[1024]-function[1024])/ydata[1024]
 # err_rel2 = np.abs(ydata2[1024]-function2[1024])/ydata2[1024]
 # err_rel3 = np.abs(ydata3[1024]-function3[1024])/ydata3[1024]
 
-# ## Plot
+# Plot
 
 fig = plt.figure()
 fig.suptitle(f'Density of probability as a function of p in the symplectic case', fontsize=20)
@@ -91,7 +94,7 @@ ax1.set_title(f'tkick={tkick}')
 ax1.set_ylabel('|Ψ|²')
 ax1.set_xlabel('p')
 ax1.plot(xdata, ydata, label=f'Ω={omega}, α={alpha}, ϵ={epsilon}, kb={kb}, K={K}')
-ax1.plot(xdata,function, alpha=0.5, label='fit')
+ax1.plot(xdata, function, alpha=0.5, label='fit')
 
 ax = plt.gca()
 ax.set_xlim([-300, 300])

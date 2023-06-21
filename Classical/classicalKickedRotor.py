@@ -21,11 +21,11 @@ class ClassicalKickedRotor:
                    mod -> bool, if True, the value will then be %2π 
            Output : array, returns Chirikov standard map"""
         if mod:
-            pn = (p + K*np.sin(q)) % (2*np.pi)
-            qn = (q + pn) % (2*np.pi)
-            return pn,qn
+            pn = (p + K * np.sin(q)) % (2 * np.pi)
+            qn = (q + pn) % (2 * np.pi)
+            return pn, qn
         else:
-            pn = (p + K*np.sin(q)) 
+            pn = (p + K * np.sin(q))
             qn = (q + pn)
             return qn, pn
     
@@ -44,10 +44,10 @@ class ClassicalKickedRotor:
         if len(p0) == len(q0):
              
             P, Q = np.meshgrid(p0, q0)
-            Q = Q.reshape(len(p0)*len(q0))
-            P = P.reshape(len(p0)*len(q0))  # resize phase space to 2 pi by 2 pi
+            Q = Q.reshape(len(p0) * len(q0))
+            P = P.reshape(len(p0) * len(q0))  # resize phase space to 2 pi by 2 pi
             
-            colours = np.array([Q/max(Q), (P+Q)/max(P+Q), P/max(P)]).T  # RGB value normalized
+            colours = np.array([Q / max(Q), (P + Q) / max(P + Q), P / max(P)]).T  # RGB value normalized
             print('colours', colours)
             Qn = [Q]
             Pn = [P]
@@ -58,8 +58,8 @@ class ClassicalKickedRotor:
                 Pn.append(P)  
                 
             print('h-stackQ', np.hstack(Qn))
-            print('v-stackQ', np.vstack([colours]*(n+1)))
-            return np.hstack(Qn), np.hstack(Pn), np.vstack([colours]*(n+1))  # Stack arrays in sequence horizontally (column wise).
+            print('v-stackQ', np.vstack([colours] * (n + 1)))
+            return np.hstack(Qn), np.hstack(Pn), np.vstack([colours] * (n + 1))  # Stack arrays in sequence horizontally (column wise).
         
         else:
             print('Initial conditions of positions and impulsion should have same size')
@@ -71,8 +71,8 @@ class ClassicalKickedRotor:
                     K -> float, kicks strength
             Output : tuple of arrays, returns the evolution of the system from an initial state using Chirikov standard map equations"""
         
-        p = np.linspace(0, 2*np.pi, n)
-        q = np.linspace(0, 2*np.pi, n)
+        p = np.linspace(0, 2 * np.pi, n)
+        q = np.linspace(0, 2 * np.pi, n)
         p[0], q[0] = p0, q0
         
         for i in range(n-1):
@@ -92,6 +92,6 @@ class ClassicalKickedRotor:
         for i in range(len(p0)):
             for j in range(len(q0)):
                 p, _ = self.evolution(n, p0[i], q0[j], K)  # only p is useful in this case
-                P2 += p**2
+                P2 += p ** 2
                 
         return P2/n   

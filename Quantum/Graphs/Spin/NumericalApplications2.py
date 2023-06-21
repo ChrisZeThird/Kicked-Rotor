@@ -13,24 +13,24 @@ import time
 ##Parameters
 
 m = 9
-N = 2**m
-#b = 0
-tkick =  10 #20
+N = 2 ** m
+# b = 0
+tkick = 10  # 20
 K = 30
 optRKR = True
 
 p = np.linspace(start=-N, stop=N, endpoint=False, num=2*N)
-x = (np.pi)/N * p
+x = np.pi / N * p
 
-f    = np.zeros(2*N)   # setting up initial distribution
-f[np.where(p==0)] = 1  # Dirac initial distribution in p = 0
+f = np.zeros(2*N)   # setting up initial distribution
+f[np.where(p == 0)] = 1  # Dirac initial distribution in p = 0
 
-psi_init_p = np.zeros((2*N,2))
-psi_init_p[:,0] = f
+psi_init_p = np.zeros((2 * N, 2))
+psi_init_p[:, 0] = f
         
 temp = np.zeros(4*N)
-temp[:2*N] = psi_init_p[:,0]
-temp[2*N:] = psi_init_p[:,1]
+temp[:2*N] = psi_init_p[:, 0]
+temp[2*N:] = psi_init_p[:, 1]
 
 epsilon = 0.3
 mu = 0.8
