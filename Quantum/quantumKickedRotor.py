@@ -4,12 +4,8 @@ Created on Thu Jun  2 13:19:44 2022
 
 @author: ChrisZeThird
 """
-import numpy as np
-from scipy.linalg import expm
+from numpy import pi, cos, exp, diag, dot, zeros, random, ndarray
 import numpy.fft as fft
-import matplotlib.pyplot as plt
-
-import time
 
 
 class KickedRotor:
@@ -19,35 +15,37 @@ class KickedRotor:
         self.kb = kb
         self.optRKR = optRKR
         
-    def Ukick(self, x, K, f):
+    def Ukick(self, x: ndarray, K: float, f: ndarray) -> ndarray:
         """Input : x -> array, impulsion
                    K -> float, kick's strength
+                   f -> array, state before the Kick
            Output : array, returns the state after a Kick"""
         
         k = K/self.kb
 
-        Uk = np.diag(np.exp(-self.I*k*np.cos(x)))
+        Uk = diag(exp(-self.I*k*cos(x)))
         f_fft = fft.fftshift(fft.fft(fft.ifftshift(f)))
         
-        return np.dot(Uk, f_fft)
+        return dot(Uk, f_fft)
         
-    def Uprop(self, p, b, fk):
+    def Uprop(self, p: ndarray, b: float, fk: ndarray) -> ndarray:
         """Input : p -> array, impulsion
                    b -> float, pseudo-impulsion
+                   fk -> array, state after the Kick
            Output : array, returns the state after a Propagation"""
            
         L = len(p)
         
         if self.optRKR:
-            phiVect = 2*np.pi*np.random.rand(L)
-            Up = np.diag(np.exp(-self.I*phiVect))
+            phiVect = 2*pi*random.rand(L)
+            Up = diag(exp(-self.I*phiVect))
         else:
-            Up = np.diag(np.exp(-(self.I*self.kb/2) * ((p + b)**2)))
+            Up = diag(exp(-(self.I*self.kb/2) * ((p + b)**2)))
             
         fp = fft.ifftshift(fft.ifft(fft.fftshift(fk)))
-        return np.dot(Up, fp)
+        return dot(Up, fp)
     
-    def loop(self, x, p, Psi, K, nkick, b):
+    def loop(self, x: ndarray, p: ndarray, Psi: ndarray, K: float, nkick: int, b: float):
         """Input : x -> array, positions 
                    p -> array, impulsions
                    Psi -> 1d array, initial states
@@ -55,8 +53,7 @@ class KickedRotor:
                    nkick -> int, number of kicks
                    b -> float, pseudo-impulsion
            Output : array, returns a state after one single iteration """
-        
-        L = len(x)
+
         res = Psi
         for j in range(nkick):
             Uk = self.Ukick(x, K, res)
@@ -64,7 +61,7 @@ class KickedRotor:
     
         return res
     
-    def avgPsi(self, x, p, Psi, K, nkick, navg):
+    def avgPsi(self, x: ndarray, p: ndarray, Psi: ndarray, K: float, nkick: int, navg: int):
         """Input : x -> array, positions 
                    p -> array, impulsion
                    Psi -> 1d array, initial states
@@ -74,13 +71,13 @@ class KickedRotor:
            Output : array, returns the average density of probability for n_beta values of the pseudo-impulsion"""
         
         L = len(x)
-        average = np.zeros((L, navg))
+        average = zeros((L, navg))
         
         for i in range(navg):
-            b = np.random.uniform(low=-0.5, high=0.5)
+            b = random.uniform(low=-0.5, high=0.5)
             psi_final = self.loop(x, p, Psi, K, nkick, b)
             average[:, i] = abs(psi_final)**2
             if i % 50 == 0:
                 print(f'loop {i}')
         
-        return np.average(average, axis=1)
+        return average(average, axis=1)
