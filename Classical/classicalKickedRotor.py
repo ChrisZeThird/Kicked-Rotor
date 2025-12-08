@@ -14,26 +14,21 @@ class ClassicalKickedRotor:
         pass
 
     @staticmethod
-    def Chirikov(p, q, K, mod=True):
+    def Chirikov(p, q, K):
         """Input : p -> array, contains the impulsion
                    q -> array, contains the positions
                    K -> float, kicks strength
                    mod -> bool, if True, the value will then be %2π 
            Output : array, returns Chirikov standard map"""
-        if mod:
-            pn = (p + K * np.sin(q)) % (2 * np.pi)
-            qn = (q + pn) % (2 * np.pi)
-            return pn, qn
-        else:
-            pn = (p + K * np.sin(q))
-            qn = (q + pn)
-            return qn, pn
+        pn = (p + K * np.sin(q)) % (2 * np.pi)
+        qn = (p + q + K * np.sin(q)) % (2 * np.pi)
+
+        return pn, qn
     
-    def iteration(self, q0, p0, K, N, n):
+    def iteration(self, q0, p0, K, n):
         """Input : q0 -> float, initial positions
                    p0 -> float, initial impulsions
                    (q0 and p0 should be of same size)
-                   N -> int, width of the studied space
                    K -> float, kicks strength
                    n -> number of iterations of the Chirikov standard map
            Output : tuple of arrays, Returns n iterations of the Chirikov standard map with parameter K and resolution r
@@ -44,22 +39,23 @@ class ClassicalKickedRotor:
         if len(p0) == len(q0):
              
             P, Q = np.meshgrid(p0, q0)
+
             Q = Q.reshape(len(p0) * len(q0))
             P = P.reshape(len(p0) * len(q0))  # resize phase space to 2 pi by 2 pi
             
             colours = np.array([Q / max(Q), (P + Q) / max(P + Q), P / max(P)]).T  # RGB value normalized
-            print('colours', colours)
+            # print('colours', colours)
             Qn = [Q]
             Pn = [P]
             
             for i in range(n):
-                Q, P = self.Chirikov(P, Q, K)
+                P, Q = self.Chirikov(P, Q, K=K)
                 Qn.append(Q)
                 Pn.append(P)  
                 
-            print('h-stackQ', np.hstack(Qn))
-            print('v-stackQ', np.vstack([colours] * (n + 1)))
-            return np.hstack(Qn), np.hstack(Pn), np.vstack([colours] * (n + 1))  # Stack arrays in sequence horizontally (column wise).
+            # print('h-stackQ', np.hstack(Qn))
+            # print('v-stackQ', np.vstack([colours] * (n + 1)))
+            return np.hstack(Pn), np.hstack(Qn), np.vstack([colours] * (n + 1))  # Stack arrays in sequence horizontally (column wise).
         
         else:
             print('Initial conditions of positions and impulsion should have same size')
