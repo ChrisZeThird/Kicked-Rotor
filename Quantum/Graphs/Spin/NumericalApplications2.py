@@ -7,10 +7,10 @@ Created on Fri May 20 22:52:05 2022
 import numpy as np
 # import numpy.fft as fft
 import matplotlib.pyplot as plt
-import KickedRotor2 as kr
+import Quantum.symplecticKickedRotor as sKR
 import time
 
-##Parameters
+# Parameters
 
 m = 9
 N = 2 ** m
@@ -37,9 +37,8 @@ mu = 0.8
 kb = 1
 nbeta = 500
 
-sim2 = kr.SpinKickedRotor(mu, epsilon, kb, optRKR)
+sim2 = sKR.SpinKickedRotor(mu, epsilon, kb, optRKR)
 psi_final = sim2.avgPsi(x, p, temp, K, tkick, nbeta)
 
 plt.figure()
 plt.plot(p,psi_final, label=f'μ={mu}, ϵ={epsilon}, kb={kb}, K={K}, nkick={tkick}, nbeta={nbeta}')
-

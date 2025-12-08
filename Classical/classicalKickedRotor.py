@@ -4,8 +4,8 @@ Created on Thu May 19 09:45:03 2022
 
 @author: ChrisZeThird
 """
-import numpy as np
-import numpy.fft as npfft
+from numpy import pi, sin, linspace, zeros, meshgrid, array, hstack, vstack, ndarray
+from typing import Tuple
 
 
 class ClassicalKickedRotor:
@@ -14,20 +14,20 @@ class ClassicalKickedRotor:
         pass
 
     @staticmethod
-    def Chirikov(p, q, K):
+    def Chirikov(p: ndarray, q: ndarray, K: float) -> Tuple[ndarray, ndarray]:
         """Input : p -> array, contains the impulsion
                    q -> array, contains the positions
                    K -> float, kicks strength
                    mod -> bool, if True, the value will then be %2π 
            Output : array, returns Chirikov standard map"""
-        pn = (p + K * np.sin(q)) % (2 * np.pi)
-        qn = (p + q + K * np.sin(q)) % (2 * np.pi)
+        pn = (p + K * sin(q)) % (2 * pi)
+        qn = (p + q + K * sin(q)) % (2 * pi)
 
         return pn, qn
     
-    def iteration(self, q0, p0, K, n):
-        """Input : q0 -> float, initial positions
-                   p0 -> float, initial impulsions
+    def iteration(self, q0: ndarray, p0: ndarray, K: float, n: int) -> Tuple[ndarray, ndarray, ndarray]:
+        """Input : q0 -> array, initial positions
+                   p0 -> array, initial impulsions
                    (q0 and p0 should be of same size)
                    K -> float, kicks strength
                    n -> number of iterations of the Chirikov standard map
@@ -38,13 +38,13 @@ class ClassicalKickedRotor:
            """
         if len(p0) == len(q0):
              
-            P, Q = np.meshgrid(p0, q0)
+            P, Q = meshgrid(p0, q0)
 
             Q = Q.reshape(len(p0) * len(q0))
             P = P.reshape(len(p0) * len(q0))  # resize phase space to 2 pi by 2 pi
             
-            colours = np.array([Q / max(Q), (P + Q) / max(P + Q), P / max(P)]).T  # RGB value normalized
-            # print('colours', colours)
+            colours = array([Q / max(Q), (P + Q) / max(P + Q), P / max(P)]).T  # RGB value normalized
+
             Qn = [Q]
             Pn = [P]
             
@@ -52,10 +52,8 @@ class ClassicalKickedRotor:
                 P, Q = self.Chirikov(P, Q, K=K)
                 Qn.append(Q)
                 Pn.append(P)  
-                
-            # print('h-stackQ', np.hstack(Qn))
-            # print('v-stackQ', np.vstack([colours] * (n + 1)))
-            return np.hstack(Pn), np.hstack(Qn), np.vstack([colours] * (n + 1))  # Stack arrays in sequence horizontally (column wise).
+
+            return hstack(Pn), hstack(Qn), vstack([colours] * (n + 1))  # Stack arrays in sequence horizontally (column wise).
         
         else:
             print('Initial conditions of positions and impulsion should have same size')
@@ -67,15 +65,15 @@ class ClassicalKickedRotor:
                     K -> float, kicks strength
             Output : tuple of arrays, returns the evolution of the system from an initial state using Chirikov standard map equations"""
         
-        p = np.linspace(0, 2 * np.pi, n)
-        q = np.linspace(0, 2 * np.pi, n)
+        p = linspace(start=0, stop=2 * pi, num=n)
+        q = linspace(start=0, stop=2 * pi, num=n)
         p[0], q[0] = p0, q0
         
         for i in range(n-1):
             p[i+1], q[i+1] = self.Chirikov(p[i], q[i], K)
         return p, q
     
-    def classicalEnergy(self, n, p0, q0, K):
+    def classicalEnergy(self, n: int, p0: ndarray, q0: ndarray, K: float) -> ndarray:
         """Input : n -> int, width of the studied space
                    p0 -> array, initial impulsions
                    q0 -> array, initial positions
@@ -83,7 +81,7 @@ class ClassicalKickedRotor:
            Output : array, returns the average value of the Kinetic energy in the classical approximation for a certain number of initial
                     conditions q0 and p0. The Kinetic energy corresponds to the value of <p²>."""
         
-        P2 = np.zeros(n)
+        P2 = zeros(n)
         
         for i in range(len(p0)):
             for j in range(len(q0)):
